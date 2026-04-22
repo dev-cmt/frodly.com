@@ -154,6 +154,7 @@ class HomeController extends Controller
             'Redx'       => FrodlyHelper::getRedx($phone),
             'SteadFast'  => FrodlyHelper::getSteadFast($phone),
             'Pathao'     => FrodlyHelper::getPathao($phone),
+            'Carrybee'   => FrodlyHelper::getCarrybee($phone),
             'Paperfly'   => FrodlyHelper::getPaperfly($phone),
         ];
 
@@ -161,6 +162,7 @@ class HomeController extends Controller
             'redx'       => asset('frodly/courier-logo/redx.jpg'),
             'steadfast'  => asset('frodly/courier-logo/steadfast.jpg'),
             'pathao'     => asset('frodly/courier-logo/pathao.jpg'),
+            'carrybee'   => asset('frodly/courier-logo/carrybee.jpg'),
             'paperfly'   => asset('frodly/courier-logo/paperfly.jpg'),
         ];
 

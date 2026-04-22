@@ -24,6 +24,7 @@ class FrodlyController extends Controller
             'Redx'       => FrodlyHelper::getRedx($phone),
             'SteadFast'  => FrodlyHelper::getSteadFast($phone),
             'Pathao'     => FrodlyHelper::getPathao($phone),
+            'Carrybee'   => FrodlyHelper::getCarrybee($phone),
             'Paperfly'   => FrodlyHelper::getPaperfly($phone),
         ];
 
@@ -86,6 +87,7 @@ class FrodlyController extends Controller
             'Redx'       => FrodlyHelper::getRedx($phone),
             'SteadFast'  => FrodlyHelper::getSteadFast($phone),
             'Pathao'     => FrodlyHelper::getPathao($phone),
+            'Carrybee'   => FrodlyHelper::getCarrybee($phone),
             'Paperfly'   => FrodlyHelper::getPaperfly($phone),
         ];
 

@@ -138,7 +138,7 @@ class FrodlyHelper
         curl_close($ch);
 
         $data = json_decode($response, true);
-        
+
         // if (!empty($data['error'])) {
         //     Log::info('API Response', $data);
         // }
@@ -155,8 +155,8 @@ class FrodlyHelper
     public static function pathaoLogin()
     {
         $config = [
-            'email'         => 'activerana1@gmail.com', //'frodlybd@gmail.com',
-            'password'      => 'Rana@123@', //'Frodly2025_$',
+            'email'         => 'activerana1@gmail.com',
+            'password'      => 'Rana@123@',
             'client_id'     => 'JxbojDzagw',
             'client_secret' => 'zFd506q6ihrAiL2ibnlyAUuqEyNRZ4nIY69UslwB',
             'token_cache'   => public_path('frodly/pathao_token.json'),
@@ -183,7 +183,7 @@ class FrodlyHelper
             ]);
 
         if (!$response->successful()) {
-            Log::error("Pathao token request failed", [
+            Log::error('Pathao token request failed', [
                 'status' => $response->status(),
                 'response' => $response->body()
             ]);
@@ -191,7 +191,9 @@ class FrodlyHelper
         }
 
         $res = $response->json();
-        if (empty($res['access_token'])) return null;
+        if (empty($res['access_token'])) {
+            return null;
+        }
 
         file_put_contents($config['token_cache'], json_encode([
             'access_token' => $res['access_token'],
@@ -248,6 +250,219 @@ class FrodlyHelper
         }
 
         return ['success'=>0,'cancel'=>0,'total'=>0,'status'=>'success'];
+    }
+
+    // ------------------- CARRYBEE -------------------
+    public static function carrybeeLogin(): ?string
+    {
+        $courier = config('courier.carrybee', []);
+        $baseUrl = rtrim($courier['base_url'] ?? 'https://api-merchant.carrybee.com', '/');
+
+        $config = [
+            'phone'          => $courier['phone'] ?? null,
+            'password'       => $courier['password'] ?? null,
+            'client_id'      => $courier['client_id'] ?? null,
+            'client_secret'  => $courier['client_secret'] ?? null,
+            'client_context' => $courier['client_context'] ?? null,
+            'token_cache'    => $courier['token_file'] ?? public_path('cache/carrybee_token.json'),
+            'token_url'      => $courier['token_url'] ?? null,
+            'base_url'       => $baseUrl,
+        ];
+
+        if (!$config['phone'] || !$config['password'] || !$config['client_id'] || !$config['client_secret'] || !$config['client_context']) {
+            Log::error('Carrybee config missing required fields');
+            return null;
+        }
+
+        $tokenDir = dirname($config['token_cache']);
+        if (!is_dir($tokenDir) && !@mkdir($tokenDir, 0777, true) && !is_dir($tokenDir)) {
+            Log::error('Carrybee token directory create failed', ['dir' => $tokenDir]);
+            return null;
+        }
+
+        if (file_exists($config['token_cache'])) {
+            $cache = json_decode(file_get_contents($config['token_cache']), true);
+            if (!empty($cache['access_token']) && !empty($cache['expires_at']) && $cache['expires_at'] > time()) {
+                return $cache['access_token'];
+            }
+        }
+
+        $endpoints = array_values(array_unique(array_filter([
+            $config['token_url'],
+            $config['base_url'] . '/api/v2/login',
+            $config['base_url'] . '/api/login',
+            $config['base_url'] . '/login',
+        ])));
+
+        $payload = [
+            'phone' => $config['phone'],
+            'password' => $config['password'],
+            'client_id' => $config['client_id'],
+            'client_secret' => $config['client_secret'],
+            'client_context' => $config['client_context'],
+        ];
+
+        foreach ($endpoints as $endpoint) {
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($payload),
+                CURLOPT_HTTPHEADER => [
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+                ],
+                CURLOPT_TIMEOUT => 20,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $body = curl_exec($ch);
+            $curlError = curl_error($ch);
+            $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($body === false || $httpCode < 200 || $httpCode >= 300) {
+                Log::warning('Carrybee login endpoint failed', [
+                    'endpoint' => $endpoint,
+                    'http_code' => $httpCode,
+                    'curl_error' => $curlError,
+                    'body' => $body,
+                ]);
+                continue;
+            }
+
+            $res = json_decode((string) $body, true);
+            if (!is_array($res)) {
+                Log::warning('Carrybee login response is not JSON', [
+                    'endpoint' => $endpoint,
+                    'body' => $body,
+                ]);
+                continue;
+            }
+
+            $token = $res['accessToken']
+                ?? $res['access_token']
+                ?? $res['token']
+                ?? ($res['data']['accessToken'] ?? null)
+                ?? ($res['data']['access_token'] ?? null)
+                ?? ($res['data']['token'] ?? null)
+                ?? ($res['data']['jwt'] ?? null);
+
+            if (!$token) {
+                Log::warning('Carrybee token missing in response', [
+                    'endpoint' => $endpoint,
+                    'response' => $res,
+                ]);
+                continue;
+            }
+
+            $expiresIn = (int) (
+                $res['expires_in']
+                ?? ($res['data']['expires_in'] ?? 3600)
+            );
+
+            $saved = file_put_contents($config['token_cache'], json_encode([
+                'access_token' => $token,
+                'expires_at'   => time() + max(300, $expiresIn - 60),
+            ]));
+
+            if ($saved === false) {
+                Log::error('Carrybee token file write failed', [
+                    'path' => $config['token_cache'],
+                ]);
+                return null;
+            }
+
+            return $token;
+        }
+
+        return null;
+    }
+
+    public static function carrybeeLoginInfo(): array
+    {
+        $token = self::carrybeeLogin();
+        $tokenFile = config('courier.carrybee.token_file', public_path('cache/carrybee_token.json'));
+        $tokenFileExists = file_exists($tokenFile);
+        $tokenFileData = null;
+
+        if ($tokenFileExists) {
+            $tokenFileData = json_decode((string) file_get_contents($tokenFile), true);
+        }
+
+        return [
+            'token_generated' => !empty($token),
+            'token_preview' => $token ? substr($token, 0, 20) . '...' : null,
+            'token_file' => $tokenFile,
+            'token_file_exists' => $tokenFileExists,
+            'token_file_data' => $tokenFileData,
+        ];
+    }
+
+    public static function getCarrybee(string $phoneNumber): array
+    {
+        $token = self::carrybeeLogin();
+        if (!$token) {
+            return ['success'=>0,'cancel'=>0,'total'=>0,'status'=>'error'];
+        }
+
+        $baseUrl = rtrim(config('courier.carrybee.base_url', 'https://api-merchant.carrybee.com'), '/');
+        $businessId = (int) config('courier.carrybee.business_id', 10214);
+
+        $cleanPhone = preg_replace('/\D+/', '', $phoneNumber);
+        if (str_starts_with($cleanPhone, '880')) {
+            $targetPhone = '+' . $cleanPhone;
+        } elseif (str_starts_with($cleanPhone, '0')) {
+            $targetPhone = '+88' . $cleanPhone;
+        } else {
+            $targetPhone = '+880' . $cleanPhone;
+        }
+
+        $url = $baseUrl . '/api/v2/businesses/' . $businessId . '/customers/' . rawurlencode($targetPhone);
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'GET',
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Content-Type: application/json',
+            "Authorization: Bearer $token"
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        $curlError = curl_error($curl);
+        $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if (!$response || $httpCode < 200 || $httpCode >= 300) {
+            Log::info('Carrybee API Response', [
+                'phone' => $phoneNumber,
+                'url' => $url,
+                'status' => $httpCode ?: 'no_response',
+                'curl_error' => $curlError,
+                'body' => $response ?: null,
+            ]);
+            return ['success'=>0,'cancel'=>0,'total'=>0,'status'=>'error'];
+        }else {
+            $data = json_decode($response, true);
+
+            $success = $data['data']['total_order'] -  $data['data']['cancelled_order'] ?? 0;
+            $cancel = $data['data']['cancelled_order'] ?? 0;
+            $total = $data['data']['total_order'] ?? 0;
+        }
+
+
+        return ['success' => $success, 'cancel' => $cancel, 'total' => $total, 'status' => 'success'];
     }
 
     // ------------------- PAPERFLY -------------------

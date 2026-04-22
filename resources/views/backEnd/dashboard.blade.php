@@ -71,7 +71,7 @@ $newLeads = DB::table('users')
             </div>
         </div>
     </div>
-    
+
     {{-- Total Clients --}}
     <div class="col-xxl-3 col-xl-3 col-lg-3 col-md-3 col-sm-6">
         <div class="card custom-card hrm-main-card secondary">
@@ -289,8 +289,12 @@ $(function() {
             // Table
             $('#courierTableBody').html(Object.entries(Summaries).map(([courier, data]) => {
                 let cancelRate = data.total > 0 ? ((data.success / data.total) * 100).toFixed(1) : '0.0';
+                const logo = data.logo || '{{ asset('images/logo-light.svg') }}';
                 return `<tr>
-                    <td class="text-start"><img src="${data.logo}" alt="${courier}" style="height:42px"></td>
+                    <td class="text-start d-flex align-items-center gap-2">
+                        <img src="${logo}" alt="${courier}" style="height:32px" onerror="this.onerror=null;this.src='{{ asset('images/logo-light.svg') }}';">
+                        <span class="fw-semibold">${courier}</span>
+                    </td>
                     <td>${data.total}</td>
                     <td>${data.success}</td>
                     <!-- <td>${data.cancel}</td>-->

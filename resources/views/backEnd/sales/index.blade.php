@@ -252,8 +252,20 @@
 
     <script>
         $(document).ready(function() {
+            function initSaleModalSelect2() {
+                $('#client_id, #package_id').each(function() {
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
 
-            $('.select2').select2();
+                    $(this).select2({
+                        width: '100%',
+                        dropdownParent: $('#saleModal')
+                    });
+                });
+            }
+
+            initSaleModalSelect2();
 
             function renderFeatures(featuresJSON) {
                 let list = $('#features_list');
@@ -280,6 +292,7 @@
                 $('#modalTitle').text('Create Sale');
                 $('#submitBtn').text('Create');
                 $('#saleForm').attr('action', '{{ route('admin.sales.store') }}');
+                $('#saleForm input[name="_method"]').remove();
 
                 $('#sale_id').val('');
                 $('#client_id').val('').trigger('change');
@@ -322,6 +335,7 @@
 
             // Refresh Select2 on modal open
             $('#saleModal').on('shown.bs.modal', function() {
+                initSaleModalSelect2();
                 $('#client_id').trigger('change.select2');
                 $('#package_id').trigger('change.select2');
             });
