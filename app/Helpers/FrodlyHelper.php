@@ -4,6 +4,8 @@ namespace App\Helpers;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
 
 class FrodlyHelper
 {
@@ -72,10 +74,11 @@ class FrodlyHelper
     public static function steadFastLogin()
     {
         $config = [
-            'email'       => 'dailyneedbd0@gmail.com', //'bornoshop24@gmail.com', //'frodlybd@gmail.com',
-            'password'    => 'DnB2025$',//'Aq1w2e3r4t5',  // 'Frodly2025_$',
+            'email'       => 'dailyneedbd0@gmail.com', //'Blossomfieldbd@gmail.com', //'bornoshop24@gmail.com', //'frodlybd@gmail.com',
+            'password'    => 'DnB2025$',//'Limon123@', //'Aq1w2e3r4t5',  // 'Frodly2025_$',
             'cookie_file' => public_path('frodly/steadfast_cookie.txt'),
-            'base_url'    => 'https://steadfast.com.bd/login',
+            // 'base_url'    => 'https://steadfast.com.bd/login',
+            'base_url'    => 'https://packzy.com/login',
         ];
 
         @mkdir(dirname($config['cookie_file']), 0777, true);
@@ -121,10 +124,11 @@ class FrodlyHelper
     public static function getSteadFast($phone)
     {
         $ch = self::steadFastLogin();
+        // $ch = null;
         if (!$ch) return ['success'=>0,'cancel'=>0,'total'=>0];
 
         curl_setopt_array($ch, [
-            CURLOPT_URL            => "https://steadfast.com.bd/user/frauds/check/$phone",
+            CURLOPT_URL            => "https://packzy.com/user/frauds/check/$phone", // https://packzy.com/user/consignment/getbyphone/$phone
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
             CURLOPT_POST           => false,
             CURLOPT_RETURNTRANSFER => true,
@@ -134,10 +138,11 @@ class FrodlyHelper
         curl_close($ch);
 
         $data = json_decode($response, true);
-
+        
         // if (!empty($data['error'])) {
         //     Log::info('API Response', $data);
         // }
+        Log::info('API Response', $data);
 
         return [
             'success' => $data['total_delivered'] ?? 0,
@@ -150,8 +155,8 @@ class FrodlyHelper
     public static function pathaoLogin()
     {
         $config = [
-            'email'         => 'frodlybd@gmail.com',
-            'password'      => 'Frodly2025_$',
+            'email'         => 'activerana1@gmail.com', //'frodlybd@gmail.com',
+            'password'      => 'Rana@123@', //'Frodly2025_$',
             'client_id'     => 'JxbojDzagw',
             'client_secret' => 'zFd506q6ihrAiL2ibnlyAUuqEyNRZ4nIY69UslwB',
             'token_cache'   => public_path('frodly/pathao_token.json'),
@@ -231,8 +236,6 @@ class FrodlyHelper
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
-
-            // dd($response, $httpCode);
 
             if ($httpCode >= 200 && $httpCode < 300 && $res = json_decode($response, true)) {
                 if (isset($res['data']['customer'])) {

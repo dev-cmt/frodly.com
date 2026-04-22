@@ -6,45 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Helpers\FrodlyHelper;
-use App\Jobs\FrodlyJob;
-use Carbon\Carbon;
 
 class FrodlyController extends Controller
 {
-    public function checkJob(Request $request)
-    {
-        $request->validate([
-            'phone' => 'required|regex:/^\d{11}$/',
-        ]);
-
-        $webhook = $request->header('X-Webhook-URL');
-
-        // Get last scheduled job time
-        $lastJobTime = DB::table('jobs')->max('available_at');
-        $delayAt = $lastJobTime ? Carbon::createFromTimestamp($lastJobTime)->addSeconds(10) : now();
-
-        FrodlyJob::dispatch(
-            $request->phone,
-            $webhook
-        ); //->delay($delayAt);
-
-        return response()->json([
-            'status' => 202,
-            'message' => 'Queued with guaranteed 10s gap',
-            'run_at' => $delayAt->toDateTimeString(),
-        ]);
-    }
-
     public function check(Request $request)
     {
-        sleep(10);
-
+        // sleep(10);
         $request->validate([
             'phone' => 'required|regex:/^\d{11}$/'
         ]);
-
         $phone = $request->input('phone');
 
         // Call courier methods

@@ -54,7 +54,7 @@ class EnsureTokenIsValid
                 'message' => 'API request limit reached for this package'
             ], 403);
         }
-
+        
 
         // 6️⃣ Increment total_requests by 1
         $sale->increment('requests_count');

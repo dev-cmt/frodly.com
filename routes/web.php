@@ -1,9 +1,8 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RoleController;
@@ -16,96 +15,55 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\YourPackageController;
 use App\Http\Controllers\SaleController;
 
-
-Route::get('/frodly-home', function (Request $request) {
-    return view('frodly-home');
-});
 Route::get('/frodly-test', function (Request $request) {
 
     set_time_limit(0);
     ini_set('max_execution_time', 0);
 
     $numbers = [
+        '01681636068',
         "01738606158",
         "01726319619",
         "01879200750",
         "01641389658",
-        "01812337616",
-        "01946377865",
-        "01711506053",
-        "01917984002",
-        "01796355555",
-        "01772366352",
-        "01537657779",
-        "01909302126",
-        "01879407777",
-        "01859001413",
-        "01304040910",
-        "01919858585",
-        "01919220992",
-        "01836257538",
-        "01957269480",
-        "01883270119",
-        "01798168537",
-        "01311145385",
-        "01979247649",
-        "01718117901",
-        "01776296648",
-        "01324523404",
-        "01852210052",
-        "01701014050",
-        "01788332338",
-        "01316469005",
-
-        "01738606158",
-        "01726319619",
-        "01879200750",
-        "01641389658",
-        "01812337616",
-        "01946377865",
-        "01711506053",
-        "01917984002",
-        "01796355555",
-        "01772366352",
-        "01537657779",
-        "01909302126",
-        "01879407777",
-        "01859001413",
-        "01304040910",
-        "01919858585",
-        "01919220992",
-        "01836257538",
-        "01957269480",
-        "01883270119",
-        "01798168537",
-        "01311145385",
-        "01979247649",
-        "01718117901",
-        "01776296648",
-        "01324523404",
-        "01852210052",
-        "01701014050",
-        "01788332338",
-        "01316469005",
+        // "01812337616",
+        // "01946377865",
+        // "01711506053",
+        // "01917984002",
+        // "01796355555",
+        // "01772366352",
+        // "01537657779",
+        // "01909302126",
+        // "01879407777",
+        // "01859001413",
+        // "01304040910",
+        // "01919858585",
+        // "01919220992",
+        // "01836257538",
+        // "01957269480",
+        // "01883270119",
+        // "01798168537",
+        // "01311145385",
+        // "01979247649",
+        // "01718117901",
+        // "01776296648",
+        // "01324523404",
+        // "01852210052",
+        // "01701014050",
+        // "01788332338",
+        // "01316469005",
     ];
-
     $responses = [];
 
     foreach ($numbers as $number) {
-        $result = \App\Helpers\FrodlyHelper::getRedx($number);
-
+        $result = \App\Helpers\FrodlyHelper::getSteadFast($number);
         // ✅ LOG REQUEST (time + phone + ip)
-        Log::info('Courier API request', [
-            'number' => $number,
-            'time'   => now()->toDateTimeString(),
-            'ip'     => $request->ip(),
-            'result' => $result,
-        ]);
-
+        // Log::info('Courier API request', [
+        //     'number' => $number,
+        //     'time'   => now()->toDateTimeString(),
+        //     'result' => $result,
+        // ]);
         $responses[$number] = $result;
-
-        // ⏱️ 10 seconds delay
-        sleep(10);
     }
 
     return response()->json([
@@ -121,7 +79,7 @@ Route::get('/cc', function () {
     \Illuminate\Support\Facades\Artisan::call('config:clear');
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('route:clear');
-    \Illuminate\Support\Facades\Artisan::call('config:cache');
+    // \Illuminate\Support\Facades\Artisan::call('config:cache');
     return 'Cleared!';
 });
 
@@ -190,7 +148,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     // User Management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
+    Route::post('/users/store', [ClientController::class, 'store'])->name('users.store');
     Route::post('/users/update', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
